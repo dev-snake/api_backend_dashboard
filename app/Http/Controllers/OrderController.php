@@ -33,7 +33,7 @@ class OrderController extends Controller
     { 
         try {
         $currentYear = now()->year;
-        $currentMonth = now()->month -1;
+        $currentMonth = now()->month;
         $currentWeek = now()->week;
         $currentDay = now()->day;
         $orderItems = $request->input('products');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
 use App\Models\Revenue_by_month;
 use App\Models\Revenue_by_week;
@@ -12,6 +13,7 @@ class RevenueController extends Controller
     /**
      * Display a listing of the resource.
      */
+
     public function index()
     {
         //
@@ -52,7 +54,8 @@ class RevenueController extends Controller
     public function revenueByCurrentWeek(){
         $currentWeek = now()->week; 
         $currentYear = now()->year; 
-        $results  = Revenue_by_week::where('year' ,'=', $currentYear)->where('week','=',$currentWeek)->get();
+        $results  = Revenue_by_week::where('year' ,'=', $currentYear)
+        ->where('week','=',$currentWeek)->get();
         return response()->json([
             "message"=> "Get revenue by current week successfully !",
             "results"=> $results, 
@@ -115,6 +118,57 @@ class RevenueController extends Controller
             "results"=>  $newResults,
             "status"=> "success"
         ]);
+    }
+    public function filterByMonthAndYear(Request $request){
+        $month = $request->input('month');
+        $year = $request->input('year');
+        $type = $request->input('type');
+        $results = Order::where('month', '=', $month)
+        ->where('year', '=', $year)->get();
+        if($results->isEmpty()){
+            return response()->json([
+                "message"=> "Year and month not found !",
+                "status"=> "failure"
+            ]);
+        }
+        $newArr = [];
+        // ==>
+        // type::quantity_sold -> Data to return ==> [ {productId  , productName , quantity_sold} ]
+        // type::revenue  -> Data to return ==> [ {month: 12 , year : 2024 , totalRevenue : 999 ]
+        // ==>
+        if($type === "quantity_sold"){
+            foreach($results as $item){
+                foreach($item->products as $product){
+                    if(isset($newArr[$product["productId"]])){
+                        $newArr[$product["productId"]]["quantity_sold"] += $product['quantity'];
+                    }else{
+                        $newArr[$product["productId"]] = [
+                            "productId"=> $product['productId'],
+                            "productName"=> $product["productName"],
+                            "quantity_sold"=> $product['quantity']
+                        ];
+                    }
+                }
+            }
+            $newArr =  array_values($newArr);
+        }else if($type === "revenue"){
+            $_results = Revenue_by_month::where('month', '=', $month)
+            ->where('year', '=', $year)->get();
+            if($_results->isEmpty()){
+                return response()->json([
+                    "message"=> "Year and month not found !",
+                    "status"=> "failure"
+                ]);
+            }
+            $newArr = $_results;
+        }
+
+        return response()->json([
+            "message"=> "Filter by month and year successfully !",
+            "results"=>  $newArr,
+            "status"=> "success"
+        ]);
+
     }
     public function create()
     {
