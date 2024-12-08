@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Order; 
+use App\Models\Order;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -15,10 +15,10 @@ class ProductController extends Controller
     {
         $getAll = Product::get();
         return response()->json([
-            'message'=> 'Get all products successfully !',
-            "results"=> $getAll,
-            'status'=> 'success'
-        ],200);
+            'message' => 'Get all products successfully !',
+            "results" => $getAll,
+            'status' => 'success'
+        ], 200);
     }
 
     /**
@@ -26,108 +26,110 @@ class ProductController extends Controller
      */
     public function create(Request  $request)
     {
-        
+
         $newProduct = Product::create($request->all());
         return response()->json([
             "message" => "Created a product successfully !",
-            "results"=> $newProduct,
-            "status"=> "success"
-        ],200);
+            "results" => $newProduct,
+            "status" => "success"
+        ], 200);
     }
-    public function getQuantitySold(){
+    public function getQuantitySold()
+    {
         $orderItems = Order::get();
         $totalSoldByProduct = [];
-        foreach($orderItems as $order){
-            foreach($order['products'] as $product){
+        foreach ($orderItems as $order) {
+            foreach ($order['products'] as $product) {
                 $productId = $product['productId'];
                 $quantity = $product['quantity'];
-                if(isset($totalSoldByProduct[$productId])){
+                if (isset($totalSoldByProduct[$productId])) {
                     $totalSoldByProduct[$productId] += $quantity;
-                }else {
+                } else {
                     $totalSoldByProduct[$productId] = $quantity;
                 }
             }
         }
         $productIds = array_keys($totalSoldByProduct);
-        $products = Product::whereIn('id', values: $productIds)->get(['id' , 'productName']);
+        $products = Product::whereIn('id', values: $productIds)->get(['id', 'productName']);
         $results = [];
-        foreach($products as $product){
+        foreach ($products as $product) {
             $results[] = [
-                "productId"=> $product->id,
-                "productName"=> $product->productName,
-                "quantitySold"=>$totalSoldByProduct[$product->id] ?? 0 ,
+                "productId" => $product->id,
+                "productName" => $product->productName,
+                "quantitySold" => $totalSoldByProduct[$product->id] ?? 0,
             ];
         }
         return response()->json([
-            "message"=> "Get the number of products sold successfully !",
-            "results"=>   $results, 
-            "status"=> "success"
+            "message" => "Get the number of products sold successfully !",
+            "results" =>   $results,
+            "status" => "success"
         ]);
     }
-    public function inventory(){
+    public function inventory()
+    {
         $products = Product::get();
         $orders = Order::get();
         $newArr = [];
-        foreach($products as $item){
-            $newArr[$item->id]=[
-                "productId"=> $item->id,
-                "productName"=>$item->productName,
-                "storage"=> $item->storage
+        foreach ($products as $item) {
+            $newArr[$item->id] = [
+                "productId" => $item->id,
+                "productName" => $item->productName,
+                "storage" => $item->storage
             ];
         }
-        foreach($orders as $order){
-            foreach($order->products as $item){
-                if(isset($newArr[$item['productId']])){
+        foreach ($orders as $order) {
+            foreach ($order->products as $item) {
+                if (isset($newArr[$item['productId']])) {
                     $newArr[$item['productId']]['storage'] -= $item['quantity'];
                 }
             }
         }
         $newResults = array_values($newArr);
         return response()->json([
-            "message"=> "Get number of products inventory successfully !",
-            "results"=>  $newResults ,
-            "status"=> "success"
+            "message" => "Get number of products inventory successfully !",
+            "results" =>  $newResults,
+            "status" => "success"
         ]);
     }
-    public function getQuantitySoldByCurrentYear(){
-        $results =[];
+    public function getQuantitySoldByCurrentYear()
+    {
+        $results = [];
         $orders = Order::all();
-        for($month = 1 ; $month <= 12 ; $month++){
-            $results[$month]=[
-                "month"=> $month,
-                "year"=> now()->year,
-                "total_quantity_sold"=> 0 
+        for ($month = 1; $month <= 12; $month++) {
+            $results[$month] = [
+                "month" => $month,
+                "year" => now()->year,
+                "total_quantity_sold" => 0
             ];
         }
-        foreach($orders as $order){
+        foreach ($orders as $order) {
             $year = $order->year;
             $month = $order->month;
-            foreach($order->products as $product){
+            foreach ($order->products as $product) {
                 $results[$month]['total_quantity_sold'] += $product['quantity'];
             }
         }
         $newResults = array_values($results);
         return response()->json([
             "message" => "Get number of products by month successfully !",
-            "results"=>    $newResults,
-            "status"=> "success"
+            "results" =>    $newResults,
+            "status" => "success"
         ]);
-        
     }
 
     public function getOne(string $productId)
     {
-        $product = Product::where('id','=',$productId)->first();
-        if(!$product){
+        $product = Product::where('id', '=', $productId)->first();
+        if (!$product) {
             return response()->json([
-                "message"=> "Id product not found !",
-                "status"=> "error"
+                "message" => "Id product not found !",
+                "status" => "error"
             ]);
         }
         return response()->json([
             "message" => "Get one product information successfully !",
-            "results"=> $product,
-            "status"=> "success"
+            "results" => $product,
+            "status" => "success"
         ]);
     }
     /**
@@ -149,14 +151,14 @@ class ProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $productId , Request $request)
+    public function edit(string $productId, Request $request)
     {
-         $product = Product::where('id','=',$productId)->update($request->all());
-         return response()->json([
-            "message"=> "Updated product successfully !",
-            "results"=>$product ,
-            "status"=> "success"
-         ]);
+        $product = Product::where('id', '=', $productId)->update($request->all());
+        return response()->json([
+            "message" => "Updated product successfully !",
+            "results" => $product,
+            "status" => "success"
+        ]);
     }
 
     /**
@@ -172,19 +174,19 @@ class ProductController extends Controller
      */
     public function destroy(string $productId)
     {
-        $product = Product::where('id','=',$productId)->delete();
-        if(!$product){
+        $product = Product::where('id', '=', $productId)->delete();
+        if (!$product) {
             return response()->json(
                 [
-                    'message'=> "id Not Found !",
-                    "status"=> 'error'
+                    'message' => "id Not Found !",
+                    "status" => 'error'
                 ]
-                );
+            );
         }
         return response()->json([
-            "message"=> "Deleted product successfully !",
-            "results"=>  $product,
-            "status"=> "success"
+            "message" => "Deleted product successfully !",
+            "results" =>  $product,
+            "status" => "success"
         ]);
     }
 }
