@@ -7,9 +7,13 @@ use MongoDB\Laravel\Eloquent\Model;
 
 class Order extends Model
 {
-        protected $connection = 'mongodb';
+    protected $connection = 'mongodb';
     protected $fillable = [
-        'products', 'total', 'orderDate' ,'year','month'
+        'products',
+        'totalOrder',
+        'year',
+        'month',
+        "day",
+        "week"
     ];
-
 }

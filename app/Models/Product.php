@@ -8,6 +8,10 @@ class Product extends Model
 {
     protected $connection = 'mongodb';
     protected $fillable = [
-        'productName', 'productPrice', 'imageUrl' , 'storage'
+        'productName',
+        'productPrice',
+        'imageUrl',
+        'storage',
+        "type"
     ];
 }

@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Illuminate\Http\Request;
-use App\Models\Revenue_by_month;
-use App\Models\Revenue_by_week;
-use App\Models\Revenue_by_day;
+use App\Models\Revenue;
 
 class RevenueController extends Controller
 {
@@ -22,7 +20,7 @@ class RevenueController extends Controller
     {
 
         $currentYear = now()->year;
-        $resultsOfCurrentYear = Revenue_by_month::where('year', '=', $currentYear)->get();
+        $resultsOfCurrentYear = Revenue::where('year', '=', $currentYear)->get();
         $monthData = [];
         for ($month = 1; $month <= 12; $month++) {
             $monthData[$month] = [
@@ -45,7 +43,8 @@ class RevenueController extends Controller
     {
         $currentMonth = now()->month;
         $currentYear = now()->year;
-        $results  = Revenue_by_month::where('month', '=', $currentMonth)->where('year', '=', $currentYear)->get();
+        $results  = Revenue::where('month', '=', $currentMonth)
+            ->where('year', '=', $currentYear)->get();
         return response()->json([
             "message" => "Get revenue by current month successfully !",
             "results" => $results,
@@ -56,11 +55,11 @@ class RevenueController extends Controller
     {
         $currentWeek = now()->week;
         $currentYear = now()->year;
-        $results  = Revenue_by_week::where('year', '=', $currentYear)
+        $results  = Revenue::where('year', '=', $currentYear)
             ->where('week', '=', $currentWeek)->get();
         return response()->json([
             "message" => "Get revenue by current week successfully !",
-            "results" => $results,
+            "results" =>  $results,
             "status" => "success"
         ]);
     }
@@ -69,12 +68,14 @@ class RevenueController extends Controller
         $currentDay = now()->day;
         $currentMonth = now()->month;
         $currentYear = now()->year;
-        $results = Revenue_by_day::where('date', '=', $currentDay)
+        $currentWeek = now()->week;
+        $results = Revenue::where('day', '=', $currentDay)
+            ->where('week', "=",   $currentWeek)
             ->where('month', "=", $currentMonth)
             ->where('year', '=', $currentYear)->get();
         return response()->json([
             "message"  => "Get revenue by current day successfully ! ",
-            "results" =>    $results,
+            "results" =>  $results,
             "status" => "success"
         ]);
     }
@@ -84,7 +85,7 @@ class RevenueController extends Controller
      */
     public function yearOfAllYears()
     {
-        $results = Revenue_by_month::get();
+        $results = Revenue::get();
         $revenueAllYears = [];
         foreach ($results as $item) {
             $revenueAllYears[$item->year] = [
@@ -104,7 +105,7 @@ class RevenueController extends Controller
     }
     public function revenueAllMonthsOfCurrentYear()
     {
-        $results = Revenue_by_month::where('year', "=", now()->year)->get();
+        $results = Revenue::where('year', "=", now()->year)->get();
         $newArr = [];
         for ($month = 1; $month <= 12; $month++) {
             $newArr[$month] = [
@@ -125,91 +126,57 @@ class RevenueController extends Controller
     }
     public function filterByMonthAndYear(Request $request)
     {
-        // ==>
-        // type::quantity_sold_month -> Data to return ==> [ {productId  , productName , quantity_sold} ]
-        // type::quantity_sold_year -> Data to return ==> [ {productId  , productName , quantity_sold} ]
-        // type::revenue_month  -> Data to return ==> [ {month: 12 , year : 2024 , totalRevenue : 999 } ]
-        // type::revenue_year  -> Data to return ==> [ { year : 2024 , totalRevenue : 999 } ]
-        // ==>
         $month = $request->input('month');
         $year = $request->input('year');
         $type = $request->input('type');
         $newArr = [];
         switch ($type) {
-            case 'quantity_sold_month':
-                $results = Order::where('month', '=', $month)
-                    ->where('year', '=', $year)->get();
-                if ($results->isEmpty()) {
+            case 'QUANTITY_SOLD_YEAR':
+                $orders = Order::where('year', '=', $year)->get();
+                for ($month = 1; $month <= 12; $month++) {
+                    $newArr[$month] = [
+                        'month' => $month,
+                        "year" =>  $year,
+                        'total_quantity_sold' => 0
+                    ];
+                }
+                if ($orders->isEmpty()) {
                     return response()->json([
                         "message" => "Year and month not found !",
+                        "results" => array_values($newArr),
                         "status" => "failure"
                     ]);
                 }
-                foreach ($results as $item) {
+                foreach ($orders as $item) {
+                    $yearOfOrder = $item->year;
+                    $monthOfOrder = $item->month;
                     foreach ($item->products as $product) {
-                        if (isset($newArr[$product["productId"]])) {
-                            $newArr[$product["productId"]]["quantity_sold"] += $product['quantity'];
-                        } else {
-                            $newArr[$product["productId"]] = [
-                                "productId" => $product['productId'],
-                                "productName" => $product["productName"],
-                                "quantity_sold" => $product['quantity']
-                            ];
+                        if ($yearOfOrder === $year) {
+                            $newArr[$monthOfOrder]['total_quantity_sold'] += $product['quantity'];
                         }
                     }
                 }
-                $newArr =  array_values($newArr);
+                $newArr = array_values($newArr);
                 break;
-            case 'quantity_sold_year':
-                $results = Order::where('year', '=', $year)->get();
-                if ($results->isEmpty()) {
+            case 'REVENUE_BY_YEAR':
+                $revenues = Revenue::where('year', '=', $year)->get();
+                for ($month = 1; $month <= 12; $month++) {
+                    $newArr[] = [
+                        "month" => $month,
+                        "year" => $year,
+                        "totalRevenue" => 0
+                    ];
+                }
+                if ($revenues->isEmpty()) {
                     return response()->json([
                         "message" => "Year and month not found !",
+                        "results" => $newArr,
                         "status" => "failure"
                     ]);
                 }
-                foreach ($results as $item) {
-                    foreach ($item->products as $product) {
-                        if (isset($newArr[$product["productId"]])) {
-                            $newArr[$product["productId"]]["quantity_sold"] += $product['quantity'];
-                        } else {
-                            $newArr[$product["productId"]] = [
-                                "productId" => $product['productId'],
-                                "productName" => $product["productName"],
-                                "quantity_sold" => $product['quantity']
-                            ];
-                        }
-                    }
-                }
-                $newArr =  array_values($newArr);
-                break;
-            case 'revenue_month':
-                $_results = Revenue_by_month::where('month', '=', $month)
-                    ->where('year', '=', $year)->get();
-                if ($_results->isEmpty()) {
-                    return response()->json([
-                        "message" => "Year and month not found !",
-                        "status" => "failure"
-                    ]);
-                }
-                $newArr = $_results;
-                break;
-            case 'revenue_year':
-                $results = Revenue_by_month::where('year', '=', $year)->get();
-                if ($results->isEmpty()) {
-                    return response()->json([
-                        "message" => "Year and month not found !",
-                        "status" => "failure"
-                    ]);
-                }
-                foreach ($results as $item) {
-                    if (isset($newArr[$item->year])) {
-                        $newArr[$item->year]['totalRevenue'] += $item['totalRevenue'];
-                    } else {
-                        $newArr[$item->year] = [
-                            "year" => $item->year,
-                            "totalRevenue" => $item->totalRevenue
-                        ];
+                foreach ($revenues as $item) {
+                    if ($item->year === $year) {
+                        $newArr[$item->month - 1]['totalRevenue'] = $item->totalRevenue;
                     }
                 }
                 $newArr = array_values($newArr);
