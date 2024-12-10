@@ -24,6 +24,7 @@ Route::prefix('revenue')->controller(RevenueController::class)->group(function (
         Route::get('/revenue_by_day/current-year', 'revenueByCurrentDay');
         Route::get('/years', 'yearOfAllYears');
         Route::post('/filter', 'filterByMonthAndYear');
+        Route::get('/overview', 'revenueOverview');
 });
 Route::prefix('/order')->controller(OrderController::class)->group(function () {
         Route::get('/getAll', 'index');
