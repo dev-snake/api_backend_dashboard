@@ -262,6 +262,11 @@ class RevenueController extends Controller
                 if ($revenues->isEmpty()) {
                     return response()->json([
                         "message" => "Year and month not found !",
+                        "payload" => [
+                            'type' => $type,
+                            'month' => $month,
+                            'year' => $year,
+                        ],
                         "results" => $newArr,
                         "status" => "failure"
                     ]);
@@ -290,6 +295,11 @@ class RevenueController extends Controller
                 if ($revenues->isEmpty()) {
                     return response()->json([
                         "message" => "Year and month not found !",
+                        "payload" => [
+                            'type' => $type,
+                            'month' => $month,
+                            'year' => $year,
+                        ],
                         "results" => $newArr,
                         "status" => "failure"
                     ]);
@@ -316,6 +326,11 @@ class RevenueController extends Controller
                 if ($orders->isEmpty()) {
                     return response()->json([
                         "message" => "Year and month not found !",
+                        "payload" => [
+                            'type' => $type,
+                            'month' => $month,
+                            'year' => $year,
+                        ],
                         "results" => $newArr,
                         "status" => "failure"
                     ]);
@@ -337,6 +352,11 @@ class RevenueController extends Controller
         }
         return response()->json([
             "message" => "Filter by month and year successfully !",
+            "payload" => [
+                'type' => $type,
+                'month' => $month,
+                'year' => $year,
+            ],
             "results" =>  $newArr,
             "status" => "success"
         ]);

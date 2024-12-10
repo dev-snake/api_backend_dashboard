@@ -10,6 +10,8 @@ class Order extends Model
     protected $connection = 'mongodb';
     protected $fillable = [
         'products',
+        'methodPayment',
+        'status',
         'totalOrder',
         'year',
         'month',
