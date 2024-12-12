@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use App\Models\Revenue;
+use App\Models\Product;
 
 class RevenueController extends Controller
 {
@@ -92,7 +93,24 @@ class RevenueController extends Controller
             $revenueAllYears[$item->year]["totalRevenue"] += $item['totalRevenue'];
         }
         $revenueAllYears = array_values($revenueAllYears);
+        //[ method payment]
+        $methodPayments = ['momo', 'zalo', 'visa', 'cash'];
+        $revenueMethodPayment = [];
+        for ($index =  0; $index < count($methodPayments); $index++) {
+            $revenueMethodPayment[] = [
+                "methodPayment" => $methodPayments[$index],
+                "orderQuantity" => 0
+            ];
+        }
+        $orders = Order::get();
 
+        foreach ($orders as $order) {
+            for ($index = 0; $index < count($revenueMethodPayment); $index++) {
+                if ($revenueMethodPayment[$index]['methodPayment'] === $order['methodPayment']) {
+                    $revenueMethodPayment[$index]['orderQuantity'] += 1;
+                }
+            }
+        }
 
         return response()->json([
             "message" => "Get all revenue data successfully!",
@@ -102,6 +120,7 @@ class RevenueController extends Controller
                 "revenueByDaysInCurrentMonth" =>   $revenueByDaysInCurrentMonth,
                 "revenueByWeek" => $resultsByWeek,
                 "revenueByDay" => $resultsByDay,
+                "methodPayments" =>   $revenueMethodPayment,
                 "revenueAllYears" => $revenueAllYears,
             ],
             "status" => "success"
@@ -366,6 +385,94 @@ class RevenueController extends Controller
         //
     }
 
+
+    public function revenueProduct()
+    {
+        $request = request()->input('productName');
+        $results = Product::whereRaw('LOWER(productName) = ?', [mb_strtolower($request)])->get();
+        $newResults = [];
+        // mb_strtolower($request, 'UTF-8')
+        if ($results->isEmpty()) {
+            return response()->json([
+                "message" => "Not Found !",
+                "results" => $results,
+                "status" => "failure"
+            ]);
+        }
+        return response()->json([
+            "message" => "Filter by month and year successfully !",
+            "results" => $results,
+            "status" => "success"
+        ], 200);
+    }
+    public function searchData()
+    {
+        $type_search = request()->input('type_search');
+        $results = [];
+        switch ($type_search) {
+            case 'REVENUE_METHOD_PAYMENT':
+                $orders = Order::get();
+                $methodPayments = ['momo', 'zalo', 'visa', 'cash'];
+                $revenueMethodPayment = [];
+                for ($index =  0; $index < count($methodPayments); $index++) {
+                    $revenueMethodPayment[] = [
+                        "methodPayment" => $methodPayments[$index],
+                        "totalRevenue" => 0
+                    ];
+                }
+                foreach ($orders as $order) {
+                    for ($index = 0; $index < count($revenueMethodPayment); $index++) {
+                        if ($revenueMethodPayment[$index]['methodPayment'] === $order['methodPayment']) {
+                            $revenueMethodPayment[$index]['totalRevenue'] += $order['totalOrder'];
+                        }
+                    }
+                }
+                $results = $revenueMethodPayment;
+
+                break;
+            case 'BEST_SELLING_PRODUCT':
+                $orders = Order::get();
+                $products = Product::get();
+                $bestSellingProduct = [];
+                $nonSellingProduct = [];
+                foreach ($products as $product) {
+                    $bestSellingProduct[] = [
+                        "productName" => $product['productName'],
+                        "totalQuantitySold" => 0
+                    ];
+                    $nonSellingProduct[] = [
+                        "productName" => $product['productName'],
+                        "totalQuantitySold" => 0
+                    ];
+                }
+                foreach ($orders as $order) {
+                    foreach ($order->products as $product) {
+                        for ($index = 0; $index < count($bestSellingProduct); $index++) {
+                            if ($bestSellingProduct[$index]['productName'] === $product['productName']) {
+                                $bestSellingProduct[$index]['totalQuantitySold'] += $product['quantity'];
+                                $nonSellingProduct[$index]['totalQuantitySold'] += $product['quantity'];
+                            }
+                        }
+                    }
+                }
+                $bestSellingProduct = array_filter($bestSellingProduct, function ($product) {
+                    return $product['totalQuantitySold'] > 10;
+                });
+                $nonSellingProduct = array_filter($nonSellingProduct, function ($product) {
+                    return $product['totalQuantitySold'] <= 10;
+                });
+                $results = [
+                    'bestSellingProduct' => array_values($bestSellingProduct),
+                    'nonSellingProduct' => array_values($nonSellingProduct)
+                ];
+                break;
+        }
+        return response()->json([
+            "message" => "Search data successfully !",
+            "results" => $results,
+            "status" => "success"
+        ]);
+    }
     /**
      * Store a newly created resource in storage.
      */

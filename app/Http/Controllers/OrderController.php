@@ -34,6 +34,8 @@ class OrderController extends Controller
             $currentWeek = now()->week;
             $currentDay = now()->day;
             $orderItems = $request->input('products');
+            $year = $request->input('year');
+            $month  = $request->input('month');
             $totalOrder = 0;
             if (!$orderItems || !is_array($orderItems)) {
                 return response()->json([
@@ -46,15 +48,18 @@ class OrderController extends Controller
                 $totalOrder += $item['productPrice'] * $item['quantity'];
             }
             $newOrder = Order::create(attributes: [
+                "customerId" => $request->input('customerId'),
+                "methodPayment" => $request->input('methodPayment'),
+                "orderStatus" => $request->input('orderStatus'),
                 "products" => $orderItems,
                 "day" => $currentDay,
                 "week" => $currentWeek,
-                "month" => $currentMonth,
-                "year" => $currentYear,
+                "month" => $month ?? $currentMonth,
+                "year" =>   $year ?? $currentYear,
                 "totalOrder" => $totalOrder
             ]);
             $revenue = Revenue::firstOrCreate(
-                ['day' => $currentDay, "week" => $currentWeek, 'month' => $currentMonth, "year" => $currentYear],
+                ['day' => $currentDay, "week" => $currentWeek, 'month' => $month ?? $currentMonth, "year" => $year ?? $currentYear],
                 ['totalRevenue' => 0]
             );
             $revenue->totalRevenue += $totalOrder;
@@ -74,10 +79,19 @@ class OrderController extends Controller
             ], 500);
         }
     }
-
+    public function getOne(String $orderId)
+    {
+        $order = Order::find($orderId);
+        return response()->json([
+            "message" => "Get order successfully !",
+            "results" => $order,
+            "status" => "success"
+        ]);
+    }
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(StoreOrderRequest $request)
     {
         //

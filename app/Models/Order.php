@@ -9,13 +9,17 @@ class Order extends Model
 {
     protected $connection = 'mongodb';
     protected $fillable = [
+        "customerId",
         'products',
         'methodPayment',
-        'status',
+        'orderStatus',
         'totalOrder',
         'year',
         'month',
         "day",
         "week"
+    ];
+    protected $attributes = [
+        'orderStatus' => 'pending',
     ];
 }
