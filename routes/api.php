@@ -33,7 +33,9 @@ Route::prefix('revenue')->controller(RevenueController::class)->group(function (
         Route::get('/years', 'yearOfAllYears');
         Route::post('/filter', 'filterByMonthAndYear');
         Route::post('/search', 'searchData');
+        Route::post('/search/v2', 'fetchProductData');
         Route::get('/overview', 'revenueOverview');
+        Route::post('/revenue-product', 'revenueProduct');
 });
 Route::prefix('/order')->controller(OrderController::class)->group(function () {
         Route::get('/getAll', 'index');

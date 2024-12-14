@@ -388,22 +388,82 @@ class RevenueController extends Controller
 
     public function revenueProduct()
     {
-        $request = request()->input('productName');
-        $results = Product::whereRaw('LOWER(productName) = ?', [mb_strtolower($request)])->get();
-        $newResults = [];
-        // mb_strtolower($request, 'UTF-8')
-        if ($results->isEmpty()) {
-            return response()->json([
-                "message" => "Not Found !",
-                "results" => $results,
-                "status" => "failure"
-            ]);
+        $productId = request()->input('productId');
+        $productName = request()->input('productName');
+        $orders = Order::get();
+        $arrYears = [];
+        foreach ($orders as $order) {
+            if (!isset($arrYears[$order['year']])) {
+                $arrYears[$order['year']] = [
+                    'year' => $order['year'],
+                    'productId'  => $productId,
+                    'productName' =>  $productName,
+                    'totalRevenue' => 0
+                ];
+            }
         }
+
+        foreach ($arrYears as $item) {
+            foreach ($orders as $order) {
+                foreach ($order['products'] as $product) {
+                    if ($item['year'] === $order['year'] && $product['productId'] === $item['productId']) {
+                        $arrYears[$item['year']]['totalRevenue'] += $product['productPrice'] * $product['quantity'];
+                    }
+                }
+            }
+        }
+
         return response()->json([
             "message" => "Filter by month and year successfully !",
-            "results" => $results,
+            "results" =>   array_values($arrYears),
             "status" => "success"
         ], 200);
+    }
+    // Output :  [{year : number , monthlyRevenue : [{month : 1 , totalRevenue : 1000 },...] }]
+    public function fetchProductData(Request $request)
+    {
+        $orders = Order::get();
+        $productId = $request->input('productId');
+        $yearlyRevenue = [];
+        $defaultMonthlyRevenue = array_map(fn($month) =>
+        [
+            "month" => $month,
+            'total_quantity_sold' => 0,
+            'totalRevenue' => 0
+        ], range(1, 12));
+        foreach ($orders as $order) {
+            if (!isset($yearlyRevenue[$order['year']])) {
+                $yearlyRevenue[$order['year']] = [
+                    'year' => $order['year'],
+                    "monthlyRevenue" => $defaultMonthlyRevenue
+                ];
+            }
+        }
+        ksort($yearlyRevenue);
+        $yearlyRevenue = array_values($yearlyRevenue);
+
+
+        foreach ($yearlyRevenue as &$yearData) {
+            foreach ($orders as $order) {
+                if ($yearData['year']  === $order['year']) {
+                    foreach ($order['products'] as $product) {
+                        if ($product['productId'] === $productId) {
+                            foreach ($yearData['monthlyRevenue'] as &$monthlyRevenue) {
+                                if ($monthlyRevenue['month'] === $order['month']) {
+                                    $monthlyRevenue['total_quantity_sold'] +=  $product['quantity'];
+                                    $monthlyRevenue['totalRevenue'] += $product['productPrice'] * $product['quantity'];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return response()->json([
+            "message" => "Fetch all monthly revenue of years successfully !",
+            "results" =>   $yearlyRevenue,
+            "status" => "success"
+        ]);
     }
     public function searchData()
     {
