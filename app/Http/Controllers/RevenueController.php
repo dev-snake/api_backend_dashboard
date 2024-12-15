@@ -532,6 +532,7 @@ class RevenueController extends Controller
             "status" => "success"
         ]);
     }
+
     /**
      * Store a newly created resource in storage.
      */

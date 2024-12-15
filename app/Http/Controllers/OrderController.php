@@ -91,7 +91,20 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-
+    // Output : [{customerId : "#xyz" , year : 2024 , monthlyPurchaseQuantity : [ {month : 1 , purchaseCount : 1} ]}]
+    public function getBuyersInfo()
+    {
+        $orders = Order::get();
+        $usersPurchaseInfo = $orders->map(fn($order) => [
+            "customerId" => $order->customerId,
+            "purchaseCount" => 0
+        ]);
+        return response()->json([
+            "message" => "Fetch users purchase information successfully !",
+            "results" =>  $usersPurchaseInfo,
+            "status" => "success"
+        ]);
+    }
     public function store(StoreOrderRequest $request)
     {
         //

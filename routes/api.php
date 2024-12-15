@@ -37,8 +37,9 @@ Route::prefix('revenue')->controller(RevenueController::class)->group(function (
         Route::get('/overview', 'revenueOverview');
         Route::post('/revenue-product', 'revenueProduct');
 });
-Route::prefix('/order')->controller(OrderController::class)->group(function () {
+Route::prefix('/orders')->controller(OrderController::class)->group(function () {
         Route::get('/getAll', 'index');
         Route::post('/create', 'create');
         Route::get('/getOne/{orderId}', 'getOne');
+        Route::get('/buyers', 'getBuyersInfo');
 });
