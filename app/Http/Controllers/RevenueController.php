@@ -442,7 +442,6 @@ class RevenueController extends Controller
         ksort($yearlyRevenue);
         $yearlyRevenue = array_values($yearlyRevenue);
 
-
         foreach ($yearlyRevenue as &$yearData) {
             foreach ($orders as $order) {
                 if ($yearData['year']  === $order['year']) {
