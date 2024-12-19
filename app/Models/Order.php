@@ -11,6 +11,7 @@ class Order extends Model
     protected $fillable = [
         "customerId",
         'products',
+        'product_id',
         'methodPayment',
         'orderStatus',
         'totalOrder',
@@ -22,4 +23,8 @@ class Order extends Model
     protected $attributes = [
         'orderStatus' => 'pending',
     ];
+    public function User()
+    {
+        return $this->belongsTo(User::class, 'customerId', ownerKey: 'id');
+    }
 }

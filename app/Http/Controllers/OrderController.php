@@ -15,7 +15,7 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $getAllOrder = Order::orderBy('id', 'desc')->get();
+        $getAllOrder = Order::orderBy('id', 'desc')->with('User')->get();
         return response()->json([
             "message" => "Get all orders successfully !",
             "results" => $getAllOrder,
